@@ -46,12 +46,9 @@ SUBST = (
         ( r'.~', '.&nbsp;' ),
         ( r'\ ', ' ' ),
         ( r'\&', '&amp;' ),
-        ( r'$\delta$', '&#x03b4;' ),
-        ( r'$O(1)$', '<i>O</i>(1)' ),
-        ( r'\texttrademark', '&trade;' )
 )
 
-def clean( text ):
+def regex_escape( text ):
     for s in RE_SUBST: text = s[ 0 ].sub( s[ 1 ], text )
     for s in SUBST: text = text.replace( *s )
     return text
@@ -60,10 +57,11 @@ class Backend(HtmlBackend):
     name = 'htmldiv'
     suffixes = '.html',
 
-    def __init__(self, encoding = None, html_class = None, clean = clean):
+    def __init__(self, encoding = None, html_class = None, html_element = None, escape = None):
         super(Backend, self).__init__(encoding)
         self.html_class = u' class ="%s"' % html_class if html_class else u''
-        self.clean = clean
+        self.html_element = html_element if html_element else 'div'
+        self.escape = escape if escape else regex_escape
 
     def write_prologue(self):
         pass
@@ -71,6 +69,8 @@ class Backend(HtmlBackend):
     def write_epilogue(self):
         pass
 
+    def format_text(self, text):
+        return self.escape(text)
+
     def write_entry(self, key, label, text):
-        if clean: text = clean(text)
-        self.output(u'<div%s>%s</div>' % (self.html_class, text))
+        self.output(u'<%s id="%s"%s>%s</%s>' % (self.html_element, key, self.html_class, text, self.html_element))
